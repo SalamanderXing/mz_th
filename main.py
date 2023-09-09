@@ -1,7 +1,16 @@
 import pandas as pd
+import json
+import ipdb
+import os
+from glob import glob
 
-df = pd.read_parquet(
-    "./train/01844147-17ff-4335-8186-c10c2b989260/scenario_01844147-17ff-4335-8186-c10c2b989260.parquet"
-)
+dir_path = "./train"
+parquet_files = glob(os.path.join(dir_path, "*", "*.parquet"))
+json_files = glob(os.path.join(dir_path, "*", "*.json"))
 
-print(df)
+
+for parquet_file_name, json_file_name in zip(parquet_files, json_files):
+    df = pd.read_parquet(parquet_file_name)
+
+    with open(json_file_name) as f:
+        json_data = json.load(f)
