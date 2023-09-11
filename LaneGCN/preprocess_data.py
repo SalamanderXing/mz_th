@@ -37,13 +37,12 @@ def main():
     config, *_ = model.get_model()
 
     config["preprocess"] = False  # we use raw data to generate preprocess data
-    config["val_workers"] = 32
-    config["workers"] = 32
+    config["val_workers"] = 0
+    config["workers"] = 0
     config["cross_dist"] = 6
     config["cross_angle"] = 0.5 * np.pi
 
     os.makedirs(os.path.dirname(config["preprocess_train"]), exist_ok=True)
-    ipdb.set_trace()
 
     val(config)
     test(config)
