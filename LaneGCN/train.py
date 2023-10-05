@@ -118,14 +118,14 @@ def main():
 
     # Data loader for training
     dataset = Dataset(config["train_split"], config, train=True)
-    train_sampler = DistributedSampler(
-        dataset,
-    )
+    # train_sampler = DistributedSampler(
+    #     dataset,
+    # )
     train_loader = DataLoader(
         dataset,
         batch_size=config["batch_size"],
         num_workers=config["workers"],
-        sampler=train_sampler,
+        # sampler=train_sampler,
         collate_fn=collate_fn,
         pin_memory=True,
         worker_init_fn=worker_init_fn,
@@ -134,12 +134,12 @@ def main():
 
     # Data loader for evaluation
     dataset = Dataset(config["val_split"], config, train=False)
-    val_sampler = DistributedSampler(dataset, num_replicas=hvd.size(), rank=hvd.rank())
+    # val_sampler = DistributedSampler(dataset, num_replicas=hvd.size(), rank=hvd.rank())
     val_loader = DataLoader(
         dataset,
         batch_size=config["val_batch_size"],
         num_workers=config["val_workers"],
-        sampler=val_sampler,
+        # sampler=val_sampler,
         collate_fn=collate_fn,
         pin_memory=True,
     )
