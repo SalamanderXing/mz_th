@@ -162,7 +162,7 @@ def worker_init_fn(pid):
 
 
 def train(epoch, config, train_loader, net, loss, post_process, opt, val_loader=None):
-    train_loader.sampler.set_epoch(int(epoch))
+    # train_loader.sampler.set_epoch(int(epoch))
     net.train()
 
     num_batches = len(train_loader)
