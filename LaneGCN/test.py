@@ -15,6 +15,7 @@
 
 import argparse
 import os
+
 os.umask(0)
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
@@ -91,18 +92,19 @@ def main():
 
     # save for further visualization
     res = dict(
-        preds = preds,
-        gts = gts,
-        cities = cities,
+        preds=preds,
+        gts=gts,
+        cities=cities,
     )
-    # torch.save(res,f"{config['save_dir']}/results.pkl")
-    
+    torch.save(res,f"{config['save_dir']}/results.pkl")
+
     # evaluate or submit
     if args.split == "val":
         # for val set: compute metric
         from argoverse.evaluation.eval_forecasting import (
             compute_forecasting_metrics,
         )
+
         # Max #guesses (K): 6
         _ = compute_forecasting_metrics(preds, gts, cities, 6, 30, 2)
         # Max #guesses (K): 1
@@ -110,8 +112,13 @@ def main():
     else:
         # for test set: save as h5 for submission in evaluation server
         from argoverse.evaluation.competition_util import generate_forecasting_h5
-        generate_forecasting_h5(preds, f"{config['save_dir']}/submit.h5")  # this might take awhile
-    import ipdb;ipdb.set_trace()
+
+        generate_forecasting_h5(
+            preds, f"{config['save_dir']}/submit.h5"
+        )  # this might take awhile
+    import ipdb
+
+    ipdb.set_trace()
 
 
 if __name__ == "__main__":
