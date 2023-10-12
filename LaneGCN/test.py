@@ -96,7 +96,9 @@ def main():
         gts=gts,
         cities=cities,
     )
-    torch.save(res,f"{config['save_dir']}/results.pkl")
+    save_path = f"{config['save_dir']}/results.pkl"
+    torch.save(res, save_path)
+    print(f"Results saved to {save_path}")
 
     # evaluate or submit
     if args.split == "val":
