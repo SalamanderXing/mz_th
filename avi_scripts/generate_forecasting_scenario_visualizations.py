@@ -1,6 +1,6 @@
 # <Copyright 2022, Argo AI, LLC. Released under the MIT license.>
 """Script to generate dynamic visualizations from a directory of Argoverse scenarios."""
-
+import ipdb
 from enum import Enum, unique
 from pathlib import Path
 from random import choices

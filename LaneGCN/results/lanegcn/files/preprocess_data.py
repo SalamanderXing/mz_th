@@ -44,8 +44,8 @@ def main():
 
     os.makedirs(os.path.dirname(config["preprocess_train"]), exist_ok=True)
 
-    val(config)
-    test(config)
+    #val(config)
+    #test(config)
     train(config)
 
 

@@ -1,17 +1,13 @@
-# Copyright (c) 2020 Uber Technologies, Inc.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import numpy as np
 import os
 import sys
-from numbers import Number
 import math
 
 gcd = math.gcd
 
 
-import torch
+#import torch
+torch = ''
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -20,7 +16,7 @@ from utils import gpu, to_long, Optimizer, StepLR
 
 from layers import Conv1d, Res1d, Linear, LinearRes, Null
 from numpy import float64, ndarray
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import dict, list, Optional, Tuple, Union
 
 
 file_path = os.path.abspath(__file__)
@@ -127,7 +123,7 @@ class Net(nn.Module):
 
         self.pred_net = PredNet(config)
 
-    def forward(self, data: Dict) -> Dict[str, List[Tensor]]:
+    def forward(self, data: dict) -> dict[str, list[Tensor]]:
         # construct actor feature
         actors, actor_idcs = actor_gather(gpu(data["feats"]))
         actor_ctrs = gpu(data["ctrs"])
@@ -154,7 +150,7 @@ class Net(nn.Module):
         return out
 
 
-def actor_gather(actors: List[Tensor]) -> Tuple[Tensor, List[Tensor]]:
+def actor_gather(actors: list[Tensor]) -> Tuple[Tensor, list[Tensor]]:
     batch_size = len(actors)
     num_actors = [len(x) for x in actors]
 
@@ -239,13 +235,13 @@ class ActorNet(nn.Module):
                 group.append(blocks[i](n_out[i], n_out[i], norm=norm, ng=ng))
             groups.append(nn.Sequential(*group))
             n_in = n_out[i]
-        self.groups = nn.ModuleList(groups)
+        self.groups = nn.Modulelist(groups)
 
         n = config["n_actor"]
         lateral = []
         for i in range(len(n_out)):
             lateral.append(Conv1d(n_out[i], n, norm=norm, ng=ng, act=False))
-        self.lateral = nn.ModuleList(lateral)
+        self.lateral = nn.Modulelist(lateral)
 
         self.output = Res1d(n, n, norm=norm, ng=ng)
 
@@ -272,7 +268,7 @@ class MapNet(nn.Module):
     """
 
     def __init__(self, config):
-        super(MapNet, self).__init__()
+        super().__init__()
         self.config = config
         n_map = config["n_map"]
         norm = "GN"
@@ -308,8 +304,8 @@ class MapNet(nn.Module):
                     fuse[key].append(nn.Linear(n_map, n_map, bias=False))
 
         for key in fuse:
-            fuse[key] = nn.ModuleList(fuse[key])
-        self.fuse = nn.ModuleDict(fuse)
+            fuse[key] = nn.Modulelist(fuse[key])
+        self.fuse: nn.Moduledict = nn.Moduledict(fuse)
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, graph):
@@ -321,7 +317,7 @@ class MapNet(nn.Module):
             temp = graph["feats"]
             return (
                 temp.new().resize_(0),
-                [temp.new().long().resize_(0) for x in graph["node_idcs"]],
+                [temp.new().long().resize_(0) for _ in graph["node_idcs"]],
                 temp.new().resize_(0),
             )
 
@@ -332,8 +328,8 @@ class MapNet(nn.Module):
 
         """fuse map"""
         res = feat
-        for i in range(len(self.fuse["ctr"])):
-            temp = self.fuse["ctr"][i](feat)
+        for i in range(len(self.fuse["ctr"])):  # type: ignore
+            temp = self.fuse["ctr"][i](feat)  # type: ignore
             for key in self.fuse:
                 if key.startswith("pre") or key.startswith("suc"):
                     k1 = key[:3]
@@ -385,17 +381,17 @@ class A2M(nn.Module):
         att = []
         for i in range(2):
             att.append(Att(n_map, config["n_actor"]))
-        self.att = nn.ModuleList(att)
+        self.att = nn.Modulelist(att)
 
     def forward(
         self,
         feat: Tensor,
-        graph: Dict[
-            str, Union[List[Tensor], Tensor, List[Dict[str, Tensor]], Dict[str, Tensor]]
+        graph: dict[
+            str, Union[list[Tensor], Tensor, list[dict[str, Tensor]], dict[str, Tensor]]
         ],
         actors: Tensor,
-        actor_idcs: List[Tensor],
-        actor_ctrs: List[Tensor],
+        actor_idcs: list[Tensor],
+        actor_ctrs: list[Tensor],
     ) -> Tensor:
         """meta, static and dyn fuse using attention"""
         meta = torch.cat(
@@ -453,11 +449,11 @@ class M2M(nn.Module):
                     fuse[key].append(nn.Linear(n_map, n_map, bias=False))
 
         for key in fuse:
-            fuse[key] = nn.ModuleList(fuse[key])
-        self.fuse = nn.ModuleDict(fuse)
+            fuse[key] = nn.Modulelist(fuse[key])
+        self.fuse = nn.Moduledict(fuse)
         self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, feat: Tensor, graph: Dict) -> Tensor:
+    def forward(self, feat: Tensor, graph: dict) -> Tensor:
         """fuse map"""
         res = feat
         for i in range(len(self.fuse["ctr"])):
@@ -502,7 +498,7 @@ class M2A(nn.Module):
     """
 
     def __init__(self, config):
-        super(M2A, self).__init__()
+        super().__init__()
         self.config = config
         norm = "GN"
         ng = 1
@@ -513,16 +509,16 @@ class M2A(nn.Module):
         att = []
         for i in range(2):
             att.append(Att(n_actor, n_map))
-        self.att = nn.ModuleList(att)
+        self.att = nn.Modulelist(att)
 
     def forward(
         self,
         actors: Tensor,
-        actor_idcs: List[Tensor],
-        actor_ctrs: List[Tensor],
+        actor_idcs: list[Tensor],
+        actor_ctrs: list[Tensor],
         nodes: Tensor,
-        node_idcs: List[Tensor],
-        node_ctrs: List[Tensor],
+        node_idcs: list[Tensor],
+        node_ctrs: list[Tensor],
     ) -> Tensor:
         for i in range(len(self.att)):
             actors = self.att[i](
@@ -554,10 +550,10 @@ class A2A(nn.Module):
         att = []
         for i in range(2):
             att.append(Att(n_actor, n_actor))
-        self.att = nn.ModuleList(att)
+        self.att = nn.Modulelist(att)
 
     def forward(
-        self, actors: Tensor, actor_idcs: List[Tensor], actor_ctrs: List[Tensor]
+        self, actors: Tensor, actor_idcs: list[Tensor], actor_ctrs: list[Tensor]
     ) -> Tensor:
         for i in range(len(self.att)):
             actors = self.att[i](
@@ -620,7 +616,7 @@ class PredNet(nn.Module):
                     nn.Linear(n_actor, 2 * config["num_preds"]),
                 )
             )
-        self.pred = nn.ModuleList(pred)
+        self.pred = nn.Modulelist(pred)
 
         self.att_dest = AttDest(n_actor)
         self.cls = nn.Sequential(
@@ -628,8 +624,8 @@ class PredNet(nn.Module):
         )
 
     def forward(
-        self, actors: Tensor, actor_idcs: List[Tensor], actor_ctrs: List[Tensor]
-    ) -> Dict[str, List[Tensor]]:
+        self, actors: Tensor, actor_idcs: list[Tensor], actor_ctrs: list[Tensor]
+    ) -> dict[str, list[Tensor]]:
         preds = []
         for i in range(len(self.pred)):
             preds.append(self.pred[i](actors))
@@ -693,11 +689,11 @@ class Att(nn.Module):
     def forward(
         self,
         agts: Tensor,
-        agt_idcs: List[Tensor],
-        agt_ctrs: List[Tensor],
+        agt_idcs: list[Tensor],
+        agt_ctrs: list[Tensor],
         ctx: Tensor,
-        ctx_idcs: List[Tensor],
-        ctx_ctrs: List[Tensor],
+        ctx_idcs: list[Tensor],
+        ctx_ctrs: list[Tensor],
         dist_th: float,
     ) -> Tensor:
         res = agts
@@ -785,10 +781,10 @@ class PredLoss(nn.Module):
 
     def forward(
         self,
-        out: Dict[str, List[Tensor]],
-        gt_preds: List[Tensor],
-        has_preds: List[Tensor],
-    ) -> Dict[str, Union[Tensor, int]]:
+        out: dict[str, list[Tensor]],
+        gt_preds: list[Tensor],
+        has_preds: list[Tensor],
+    ) -> dict[str, Union[Tensor, int]]:
         cls, reg = out["cls"], out["reg"]
         cls = torch.cat([x for x in cls], 0)
         reg = torch.cat([x for x in reg], 0)
@@ -858,7 +854,7 @@ class Loss(nn.Module):
         self.config = config
         self.pred_loss = PredLoss(config)
 
-    def forward(self, out: Dict, data: Dict) -> Dict:
+    def forward(self, out: dict, data: dict) -> dict:
         loss_out = self.pred_loss(out, gpu(data["gt_preds"]), gpu(data["has_preds"]))
         loss_out["loss"] = loss_out["cls_loss"] / (
             loss_out["num_cls"] + 1e-10
@@ -880,10 +876,10 @@ class PostProcess(nn.Module):
 
     def append(
         self,
-        metrics: Dict,
-        loss_out: Dict,
-        post_out: Optional[Dict[str, List[ndarray]]] = None,
-    ) -> Dict:
+        metrics: dict,
+        loss_out: dict,
+        post_out: dict[str, list[ndarray]] | None = None,
+    ) -> dict:
         if len(metrics.keys()) == 0:
             for key in loss_out:
                 if key != "loss":

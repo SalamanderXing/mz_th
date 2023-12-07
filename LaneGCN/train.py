@@ -24,7 +24,7 @@ from torch.utils.data import Sampler, DataLoader
 # import horovod.torch as hvd
 
 
-from torch.utils.data.distributed import DistributedSampler
+# from torch.utils.data.distributed import DistributedSampler
 
 from utils import Logger, load_pretrain
 

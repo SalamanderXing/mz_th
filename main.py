@@ -14,3 +14,8 @@ for parquet_file_name, json_file_name in zip(parquet_files, json_files):
 
     with open(json_file_name) as f:
         json_data = json.load(f)
+
+    # print(df.head())
+    # print(json_data)
+    df.to_csv("data_sample.csv", index=False)
+    break
